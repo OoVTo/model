@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wireframe Object Survey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --panel:#0f1620; --line:#3d5a70; --line-dim:#22323f;
+  --dot:#8fe3ff; --amber:#ffb454; --ink:#c9d6de; --ink-dim:#5f7889; --hair:#1c2933;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){ --bg:#eef1f3; --panel:#ffffff; --line:#7f97a6; --line-dim:#c3d0d8;
+    --dot:#0f7fa8; --amber:#b5620a; --ink:#26343c; --ink-dim:#7a8e99; --hair:#d5dee3; }
+}
+:root[data-theme="dark"]{ --bg:#0b0f14; --panel:#0f1620; --line:#3d5a70; --line-dim:#22323f;
+  --dot:#8fe3ff; --amber:#ffb454; --ink:#c9d6de; --ink-dim:#5f7889; --hair:#1c2933; }
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;}
+.wrap{max-width:1080px;margin:0 auto;padding:22px 20px 60px;}
+.masthead{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--hair);padding-bottom:14px;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.masthead h1{font-size:1.15rem;font-weight:600;margin:0;letter-spacing:.01em;}
+.masthead span{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--ink-dim);}
+nav.pages{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+nav.pages button{font-family:'IBM Plex Mono',monospace;font-size:.78rem;background:var(--panel);color:var(--ink-dim);
+  border:1px solid var(--hair);padding:8px 14px;border-radius:5px;cursor:pointer;}
+nav.pages button.active{color:var(--bg);background:var(--dot);border-color:var(--dot);}
+nav.pages button:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+.layer{margin-bottom:34px;}
+.layer-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;}
+.layer-tag{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--amber);border:1px solid var(--line-dim);padding:2px 7px;border-radius:2px;}
+.layer-head h2{font-size:.98rem;font-weight:600;margin:0;color:var(--ink);}
+.layer-head p{margin:2px 0 0;font-size:.82rem;color:var(--ink-dim);}
+.panel{background:var(--panel);border:1px solid var(--hair);border-radius:6px;overflow:hidden;}
+#stage{width:100%;height:min(56vw,420px);display:block;cursor:grab;touch-action:none;}
+#stage:active{cursor:grabbing;}
+.hint{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--ink-dim);padding:8px 14px;border-top:1px solid var(--hair);}
+.views{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;}
+.view{background:var(--panel);border:1px solid var(--hair);border-radius:6px;padding:10px;}
+.view h3{font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:500;margin:0 0 6px;color:var(--ink-dim);}
+.view svg{width:100%;height:auto;display:block;}
+.dimtext{font-family:'IBM Plex Mono',monospace;font-size:9px;fill:var(--amber);}
+.wireline{stroke:var(--line);stroke-width:1;fill:none;}
+.wiredot{fill:var(--dot);}
+.leadline{stroke:var(--ink-dim);stroke-width:.8;fill:none;stroke-dasharray:2 2;}
+.leadlabel{font-family:'IBM Plex Mono',monospace;font-size:9.5px;fill:var(--ink);}
+.idbox{background:var(--panel);border:1px solid var(--hair);border-radius:6px;padding:16px 18px;margin-top:14px;}
+.idbox .verdict{font-size:1rem;font-weight:600;margin:0 0 4px;}
+.idbox .conf{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--ink-dim);}
+footer{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--ink-dim);border-top:1px solid var(--hair);padding-top:12px;margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <h1 id="pagetitle">Wireframe Object Survey</h1>
+    <span>UNITS: CM · POINTS &amp; LINES ONLY</span>
+  </div>
+  <nav class="pages" id="pagesnav"></nav>
+
+  <div class="layer">
+    <div class="layer-head">
+      <span class="layer-tag">LAYER 1</span>
+      <div><h2>3D wireframe reconstruction</h2><p id="l1sub">Drag to rotate.</p></div>
+    </div>
+    <div class="panel">
+      <canvas id="stage"></canvas>
+      <div class="hint">drag / touch to orbit · auto-rotates when idle</div>
+    </div>
+  </div>
+
+  <div class="layer">
+    <div class="layer-head">
+      <span class="layer-tag">LAYER 2</span>
+      <div><h2>2D orthographic layer — dimensions</h2><p>Front, side and top projections, each measuring one axis of the object.</p></div>
+    </div>
+    <div class="views" id="ortho"></div>
+  </div>
+
+  <div class="layer">
+    <div class="layer-head">
+      <span class="layer-tag">LAYER 3</span>
+      <div><h2>Identification layer</h2><p>Leader lines mark the features the shape and details were matched against.</p></div>
+    </div>
+    <div class="panel" style="padding:14px;">
+      <svg id="idsvg" viewBox="0 0 420 300"></svg>
+    </div>
+    <div class="idbox">
+      <p class="verdict" id="verdict"></p>
+      <p class="conf" id="matchbasis"></p>
+    </div>
+  </div>
+
+  <footer>Dimensions are approximate, scaled from reference photos — not manufacturer specs.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+function svgEl(tag, attrs){ const e=document.createElementNS('http://www.w3.org/2000/svg',tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+function dimLineV(svg,x,y1,y2,label){
+  svg.appendChild(svgEl('line',{x1:x,y1,x2:x,y2,class:'leadline'}));
+  svg.appendChild(svgEl('line',{x1:x-4,y1,x2:x+4,y2:y1,class:'wireline'}));
+  svg.appendChild(svgEl('line',{x1:x-4,y1:y2,x2:x+4,y2,class:'wireline'}));
+  const t=svgEl('text',{x:x+6,y:(y1+y2)/2,class:'dimtext'}); t.textContent=label; svg.appendChild(t); }
+function dimLineH(svg,y,x1,x2,label){
+  svg.appendChild(svgEl('line',{x1,y1:y,x2,y2:y,class:'leadline'}));
+  svg.appendChild(svgEl('line',{x1,y1:y-4,x2:x1,y2:y+4,class:'wireline'}));
+  svg.appendChild(svgEl('line',{x1:x2,y1:y-4,x2,y2:y+4,class:'wireline'}));
+  const t=svgEl('text',{x:(x1+x2)/2-14,y:y+13,class:'dimtext'}); t.textContent=label; svg.appendChild(t); }
+
+const CSSVAR = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// ---------------- BOTTLE PAGE ----------------
+const BOTTLE = (()=>{
+  const PROFILE=[[0,4.5],[0.6,4.6],[19,4.6],[21,4.25],[22.6,3.35],[24,2.95],[24,3.55],[27,3.55]];
+  const H=27, DIA=9.2, N=16;
+  function three(canvas){
+    const scene=new THREE.Scene(); const cam=new THREE.PerspectiveCamera(40,1,0.1,100);
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    function size(){const r=canvas.getBoundingClientRect(); renderer.setSize(r.width,r.height,false);
+      cam.aspect=r.width/r.height; cam.updateProjectionMatrix();}
+    const group=new THREE.Group(); scene.add(group);
+    const dotColor=CSSVAR('--dot')||'#8fe3ff', lineColor=CSSVAR('--line')||'#3d5a70';
+    const rings=PROFILE.map(([y,r])=>{const pts=[];for(let i=0;i<N;i++){const a=(i/N)*Math.PI*2;
+      pts.push(new THREE.Vector3(Math.cos(a)*r*0.1,y*0.1,Math.sin(a)*r*0.1));} return pts;});
+    const allPts=rings.flat(); const topC=new THREE.Vector3(0,H*0.1,0), botC=new THREE.Vector3(0,0,0);
+    allPts.push(topC,botC);
+    group.add(new THREE.Points(new THREE.BufferGeometry().setFromPoints(allPts),
+      new THREE.PointsMaterial({color:dotColor,size:0.045})));
+    const segPts=[]; rings.forEach(ring=>{for(let i=0;i<N;i++) segPts.push(ring[i],ring[(i+1)%N]);});
+    for(let j=0;j<N;j++) for(let k=0;k<rings.length-1;k++) segPts.push(rings[k][j],rings[k+1][j]);
+    const lastRing=rings[rings.length-1], firstRing=rings[0];
+    for(let i=0;i<N;i+=2){segPts.push(lastRing[i],topC); segPts.push(firstRing[i],botC);}
+    group.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(segPts),
+      new THREE.LineBasicMaterial({color:lineColor,transparent:true,opacity:.85})));
+    group.position.y=-H*0.05; cam.position.set(0,1.6,5.2); cam.lookAt(0,0.6,0);
+    return mountOrbit(canvas,renderer,scene,cam,group,size);
+  }
+  function frontView(){
+    const svg=svgEl('svg',{viewBox:'0 0 200 220'}); const scale=6, baseY=190, cx=100;
+    const pts=PROFILE.map(([y,r])=>[cx-r*scale,baseY-y*scale,cx+r*scale,baseY-y*scale]);
+    let d=`M ${pts[0][0]} ${pts[0][1]}`; pts.forEach(p=>d+=` L ${p[0]} ${p[1]}`);
+    d+=` L ${pts[pts.length-1][2]} ${pts[pts.length-1][3]}`;
+    for(let i=pts.length-1;i>=0;i--) d+=` L ${pts[i][2]} ${pts[i][3]}`; d+=' Z';
+    svg.appendChild(svgEl('path',{d,class:'wireline'}));
+    pts.forEach(p=>{svg.appendChild(svgEl('circle',{cx:p[0],cy:p[1],r:1.6,class:'wiredot'}));
+      svg.appendChild(svgEl('circle',{cx:p[2],cy:p[3],r:1.6,class:'wiredot'}));});
+    dimLineV(svg,168,baseY,baseY-H*scale,H.toFixed(1)+' cm');
+    dimLineH(svg,baseY+18,cx-4.5*scale,cx+4.5*scale,DIA.toFixed(1)+' cm');
+    return svg;
+  }
+  function topView(){
+    const svg=svgEl('svg',{viewBox:'0 0 200 200'}); const cx=100,cy=100,r=DIA/2*11;
+    svg.appendChild(svgEl('circle',{cx,cy,r,class:'wireline'}));
+    for(let i=0;i<N;i++){const a=(i/N)*Math.PI*2;
+      svg.appendChild(svgEl('circle',{cx:cx+Math.cos(a)*r,cy:cy+Math.sin(a)*r,r:1.6,class:'wiredot'}));}
+    dimLineH(svg,cy,cx-r,cx+r,DIA.toFixed(1)+' cm ⌀');
+    svg.appendChild(svgEl('circle',{cx,cy,r:1.8,class:'wiredot'}));
+    return svg;
+  }
+  function sideView(){
+    const svg=svgEl('svg',{viewBox:'0 0 200 220'}); const front=frontView();
+    Array.from(front.children).forEach(c=>svg.appendChild(c.cloneNode(true)));
+    const t=svgEl('text',{x:14,y:14,class:'dimtext'}); t.textContent='depth = diameter'; svg.appendChild(t);
+    return svg;
+  }
+  function ortho(container){
+    [['FRONT — height × width',frontView()],['SIDE — height × depth (cylindrical)',sideView()],
+     ['TOP — diameter',topView()]].forEach(([label,svg])=>{
+      const wrap=document.createElement('div'); wrap.className='view';
+      const h=document.createElement('h3'); h.textContent=label;
+      wrap.appendChild(h); wrap.appendChild(svg); container.appendChild(wrap);});
+  }
+  function id(svg){
+    const cx=150,scale=6.4,baseY=260;
+    const pts=PROFILE.map(([y,r])=>[cx-r*scale,baseY-y*scale,cx+r*scale,baseY-y*scale]);
+    let d=`M ${pts[0][0]} ${pts[0][1]}`; pts.forEach(p=>d+=` L ${p[0]} ${p[1]}`);
+    d+=` L ${pts[pts.length-1][2]} ${pts[pts.length-1][3]}`;
+    for(let i=pts.length-1;i>=0;i--) d+=` L ${pts[i][2]} ${pts[i][3]}`; d+=' Z';
+    svg.appendChild(svgEl('path',{d,class:'wireline'}));
+    pts.forEach(p=>{svg.appendChild(svgEl('circle',{cx:p[0],cy:p[1],r:1.6,class:'wiredot'}));
+      svg.appendChild(svgEl('circle',{cx:p[2],cy:p[3],r:1.6,class:'wiredot'}));});
+    function callout(px,py,lx,ly,tx,ty,label,anchor){
+      svg.appendChild(svgEl('circle',{cx:px,cy:py,r:2.2,fill:'var(--amber)'}));
+      svg.appendChild(svgEl('line',{x1:px,y1:py,x2:lx,y2:ly,class:'leadline'}));
+      svg.appendChild(svgEl('line',{x1:lx,y1:ly,x2:tx,y2:ty,class:'leadline'}));
+      const t=svgEl('text',{x:tx+(anchor==='end'?-4:4),y:ty+3,class:'leadlabel','text-anchor':anchor||'start'});
+      t.textContent=label; svg.appendChild(t);}
+    callout(cx+3.55*scale,baseY-25.5*scale,340,40,400,40,'screw-thread cap, wider than neck','end');
+    callout(cx+3.35*scale,baseY-23*scale,336,85,400,85,'wide-mouth neck','end');
+    callout(cx+4.6*scale,baseY-10*scale,336,150,400,150,'straight double-wall body','end');
+    callout(cx-4.5*scale,baseY-2*scale,60,240,20,240,'flat recessed base','start');
+    callout(cx,baseY-27*scale-4,150,20,150,8,'flat cap top (no spout)','middle');
+  }
+  return {label:'Hydro Flask', title:'Object 1 — Insulated Bottle',
+    l1sub:"Drag to rotate. Built from the object's revolved profile — vertices only, no fill.",
+    verdict:'Insulated stainless-steel water bottle — wide-mouth, screw-cap style (Hydro Flask–type)',
+    matchbasis:'MATCH BASIS: straight cylindrical body · tapered shoulder to a wide neck · deep screw-thread cap wider than the neck · flat recessed base · height ≈ 2.9× diameter',
+    three, ortho, id};
+})();
+
+// ---------------- WALLET PAGE ----------------
+const WALLET = (()=>{
+  const W=11, HGT=8.5, Z_FOLD=0.9, Z_OPEN=1.9, FOLD_X=-W/2+W*0.18;
+  function wedgeCorners(){
+    const zAt=x=>{const t=(x+W/2)/W; return Z_FOLD+(Z_OPEN-Z_FOLD)*t;};
+    const corners=[];
+    [-W/2,W/2].forEach(x=>{const z=zAt(x)/2; corners.push([x,-HGT/2,-z],[x,-HGT/2,z],[x,HGT/2,z],[x,HGT/2,-z]);});
+    return corners;
+  }
+  function three(canvas){
+    const scene=new THREE.Scene(); const cam=new THREE.PerspectiveCamera(38,1,0.1,100);
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    function size(){const r=canvas.getBoundingClientRect(); renderer.setSize(r.width,r.height,false);
+      cam.aspect=r.width/r.height; cam.updateProjectionMatrix();}
+    const group=new THREE.Group(); scene.add(group);
+    const dotColor=CSSVAR('--dot')||'#8fe3ff', lineColor=CSSVAR('--line')||'#3d5a70', amber=CSSVAR('--amber')||'#ffb454';
+    const s=0.15;
+    const C=wedgeCorners().map(([x,y,z])=>new THREE.Vector3(x*s,y*s,z*s));
+    const [l0,l1,l2,l3,r0,r1,r2,r3]=C;
+    const edges=[[l0,l1],[l1,l2],[l2,l3],[l3,l0],[r0,r1],[r1,r2],[r2,r3],[r3,r0],[l0,r0],[l1,r1],[l2,r2],[l3,r3]];
+    const zFoldAtCrease=(Z_FOLD+(Z_OPEN-Z_FOLD)*((FOLD_X+W/2)/W))/2;
+    const cf1=new THREE.Vector3(FOLD_X*s,-HGT/2*s,zFoldAtCrease*s), cf2=new THREE.Vector3(FOLD_X*s,HGT/2*s,zFoldAtCrease*s);
+    const cb1=new THREE.Vector3(FOLD_X*s,-HGT/2*s,-zFoldAtCrease*s), cb2=new THREE.Vector3(FOLD_X*s,HGT/2*s,-zFoldAtCrease*s);
+    edges.push([cf1,cf2],[cb1,cb2]);
+    const inset=0.55;
+    const zFrontAt=x=>(Z_FOLD+(Z_OPEN-Z_FOLD)*((x+W/2)/W))/2*s+0.003;
+    const sx0=(FOLD_X+0.3)*s, sx1=(W/2-inset)*s, sy0=(-HGT/2+inset)*s, sy1=(HGT/2-inset)*s;
+    const stitchPts=[];
+    function stitchLine(x0,y0,x1,y1,n){for(let i=0;i<=n;i++){const t=i/n,x=x0+(x1-x0)*t,y=y0+(y1-y0)*t;
+      stitchPts.push(new THREE.Vector3(x,y,zFrontAt(x/s)));}}
+    stitchLine(sx0,sy0,sx1,sy0,8); stitchLine(sx1,sy0,sx1,sy1,5);
+    stitchLine(sx1,sy1,sx0,sy1,8); stitchLine(sx0,sy1,sx0,sy0,5);
+    const emblem=[]; const ex=(FOLD_X+(W/2-inset))/2*s, ey=-0.02*s;
+    for(let i=-3;i<=3;i++) emblem.push(new THREE.Vector3(ex+i*0.09*s,ey+Math.abs(i)*0.05*s,zFrontAt(ex/s)+0.01*s));
+    for(let i=-2;i<=2;i++) emblem.push(new THREE.Vector3(ex+i*0.11*s,ey-0.32*s,zFrontAt(ex/s)+0.01*s));
+    const allPts=[...C,cf1,cf2,cb1,cb2,...stitchPts,...emblem];
+    group.add(new THREE.Points(new THREE.BufferGeometry().setFromPoints(allPts),
+      new THREE.PointsMaterial({color:dotColor,size:0.045})));
+    const segPts=[]; edges.forEach(([a,b])=>segPts.push(a,b));
+    group.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(segPts),
+      new THREE.LineBasicMaterial({color:lineColor,transparent:true,opacity:.9})));
+    const stitchSegPts=[]; for(let i=0;i<stitchPts.length-1;i++) stitchSegPts.push(stitchPts[i],stitchPts[i+1]);
+    const stitchGeo=new THREE.BufferGeometry().setFromPoints(stitchSegPts);
+    const stitchMesh=new THREE.Line(stitchGeo,new THREE.LineDashedMaterial({color:amber,dashSize:0.02,gapSize:0.015,transparent:true,opacity:.9}));
+    stitchMesh.computeLineDistances(); group.add(stitchMesh);
+    cam.position.set(1.4,1.3,3.4); cam.lookAt(0,0,0);
+    return mountOrbit(canvas,renderer,scene,cam,group,size,-0.18);
+  }
+  function frontView(){
+    const svg=svgEl('svg',{viewBox:'0 0 200 170'}); const scale=10,cx=100,cy=80;
+    const x0=cx-W/2*scale,x1=cx+W/2*scale,y0=cy-HGT/2*scale,y1=cy+HGT/2*scale;
+    svg.appendChild(svgEl('rect',{x:x0,y:y0,width:x1-x0,height:y1-y0,class:'wireline'}));
+    [[x0,y0],[x1,y0],[x1,y1],[x0,y1]].forEach(([x,y])=>svg.appendChild(svgEl('circle',{cx:x,cy:y,r:1.8,class:'wiredot'})));
+    const foldX=cx+FOLD_X*scale;
+    svg.appendChild(svgEl('line',{x1:foldX,y1:y0,x2:foldX,y2:y1,class:'wireline'}));
+    svg.appendChild(svgEl('circle',{cx:foldX,cy:y0,r:1.6,class:'wiredot'}));
+    svg.appendChild(svgEl('circle',{cx:foldX,cy:y1,r:1.6,class:'wiredot'}));
+    dimLineV(svg,x1+14,y1,y0,HGT.toFixed(1)+' cm');
+    dimLineH(svg,y1+16,x0,x1,W.toFixed(1)+' cm');
+    return svg;
+  }
+  function sideView(){
+    const svg=svgEl('svg',{viewBox:'0 0 200 170'}); const scale=10,cx=60,cy=80;
+    const y0=cy-HGT/2*scale,y1=cy+HGT/2*scale;
+    const xFoldEdge=cx, xOpenEdge=cx+W*scale*0.55;
+    const zF=Z_FOLD*scale/2, zO=Z_OPEN*scale/2;
+    const d=`M ${xFoldEdge} ${y0-zF} L ${xOpenEdge} ${y0-zO} L ${xOpenEdge} ${y1-zO} L ${xFoldEdge} ${y1-zF} Z`;
+    svg.appendChild(svgEl('path',{d,class:'wireline'}));
+    [[xFoldEdge,y0-zF],[xOpenEdge,y0-zO],[xOpenEdge,y1-zO],[xFoldEdge,y1-zF]].forEach(([x,y])=>
+      svg.appendChild(svgEl('circle',{cx:x,cy:y,r:1.8,class:'wiredot'})));
+    dimLineV(svg,xFoldEdge-16,y0-zF,y0-zF+(Z_FOLD*scale),Z_FOLD.toFixed(1)+' cm');
+    dimLineV(svg,xOpenEdge+16,y0-zO,y0-zO+(Z_OPEN*scale),Z_OPEN.toFixed(1)+' cm');
+    const t=svgEl('text',{x:cx+10,y:y1+26,class:'dimtext'}); t.textContent='fold →  open edge'; svg.appendChild(t);
+    return svg;
+  }
+  function topView(){
+    const svg=svgEl('svg',{viewBox:'0 0 200 100'}); const scale=10,cx=100,cy=50;
+    const x0=cx-W/2*scale,x1=cx+W/2*scale, zF=Z_FOLD*scale/2, zO=Z_OPEN*scale/2;
+    const d=`M ${x0} ${cy-zF} L ${x1} ${cy-zO} L ${x1} ${cy+zO} L ${x0} ${cy+zF} Z`;
+    svg.appendChild(svgEl('path',{d,class:'wireline'}));
+    [[x0,cy-zF],[x1,cy-zO],[x1,cy+zO],[x0,cy+zF]].forEach(([x,y])=>
+      svg.appendChild(svgEl('circle',{cx:x,cy:y,r:1.8,class:'wiredot'})));
+    dimLineH(svg,cy+zO+16,x0,x1,W.toFixed(1)+' cm');
+    return svg;
+  }
+  function ortho(container){
+    [['FRONT — width × height',frontView()],['SIDE — thickness taper',sideView()],
+     ['TOP — width × thickness',topView()]].forEach(([label,svg])=>{
+      const wrap=document.createElement('div'); wrap.className='view';
+      const h=document.createElement('h3'); h.textContent=label;
+      wrap.appendChild(h); wrap.appendChild(svg); container.appendChild(wrap);});
+  }
+  function id(svg){
+    const scale=16,cx=180,cy=150;
+    const x0=cx-W/2*scale,x1=cx+W/2*scale,y0=cy-HGT/2*scale,y1=cy+HGT/2*scale;
+    svg.appendChild(svgEl('rect',{x:x0,y:y0,width:x1-x0,height:y1-y0,class:'wireline'}));
+    [[x0,y0],[x1,y0],[x1,y1],[x0,y1]].forEach(([x,y])=>svg.appendChild(svgEl('circle',{cx:x,cy:y,r:1.8,class:'wiredot'})));
+    const foldX=cx+FOLD_X*scale;
+    svg.appendChild(svgEl('line',{x1:foldX,y1:y0,x2:foldX,y2:y1,class:'wireline'}));
+    const inset=10;
+    svg.appendChild(svgEl('rect',{x:foldX+6,y:y0+inset,width:(x1-inset)-(foldX+6),height:(y1-y0)-2*inset,class:'wireline','stroke-dasharray':'1 3'}));
+    const emx=(foldX+x1)/2, emy=cy;
+    for(let i=-3;i<=3;i++) svg.appendChild(svgEl('circle',{cx:emx+i*5,cy:emy-Math.abs(i)*3,r:1.3,class:'wiredot'}));
+    function callout(px,py,lx,ly,tx,ty,label,anchor){
+      svg.appendChild(svgEl('circle',{cx:px,cy:py,r:2.2,fill:'var(--amber)'}));
+      svg.appendChild(svgEl('line',{x1:px,y1:py,x2:lx,y2:ly,class:'leadline'}));
+      svg.appendChild(svgEl('line',{x1:lx,y1:ly,x2:tx,y2:ty,class:'leadline'}));
+      const t=svgEl('text',{x:tx+(anchor==='end'?-4:4),y:ty+3,class:'leadlabel','text-anchor':anchor||'start'});
+      t.textContent=label; svg.appendChild(t);}
+    callout(foldX,y0+20,70,40,20,40,'hinge / fold line','start');
+    callout(x1,y0+10,380,30,400,30,'thicker open edge (card layers)','end');
+    callout(foldX+16,y1-14,90,260,20,260,'contrast top-stitch, offset from fold','start');
+    callout(emx,emy-14,emx+50,90,emx+90,90,'embossed crest + wordmark','start');
+  }
+  return {label:'Wallet', title:'Object 2 — Bifold Wallet',
+    l1sub:'Drag to rotate. Built as a hinged wedge — thin at the fold, thicker at the open edge.',
+    verdict:'Bifold leather wallet — hand-stitched, with an embossed brand medallion',
+    matchbasis:'MATCH BASIS: rectangular folded profile, roughly 11 × 8.5 cm · single hinge/fold line off-center · wedge thickness — thin at fold, thicker at open edge from stacked card layers · contrast top-stitching around the panel edge · embossed crest + wordmark on the front face',
+    three, ortho, id};
+})();
+
+// ---------------- GUITAR PAGE ----------------
+const GUITAR = (()=>{
+  // closed outline (cm), y=0 headstock tip .. y=97 body bottom, x = offset from centerline
+  const OUT=[[-3.3,0],[-3.3,9],[-2.1,10],[-2.3,32],[-2.6,52],[-7.0,58],[-9.8,68],[-9.0,82],[-5.0,94],
+    [0,97],[5.0,94],[9.0,82],[9.8,68],[7.5,60],[8.0,48],[6.0,40],[3.0,46],[2.6,44],[2.3,32],[2.1,10],[3.3,9],[3.3,0]];
+  const LEN=97, BODYW=19.6;
+  function thickAt(y){ return y<10?1.6 : y<52?(1.6+(2.2-1.6)*(y-10)/42) : 4.4; }
+  function three(canvas){
+    const scene=new THREE.Scene(); const cam=new THREE.PerspectiveCamera(35,1,0.1,100);
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    function size(){const r=canvas.getBoundingClientRect(); renderer.setSize(r.width,r.height,false);
+      cam.aspect=r.width/r.height; cam.updateProjectionMatrix();}
+    const group=new THREE.Group(); scene.add(group);
+    const dotColor=CSSVAR('--dot')||'#8fe3ff', lineColor=CSSVAR('--line')||'#3d5a70', amber=CSSVAR('--amber')||'#ffb454';
+    const s=0.045;
+    const front=OUT.map(([x,y])=>new THREE.Vector3(x*s,(LEN-y)*s,thickAt(y)/2*s));
+    const back=OUT.map(([x,y])=>new THREE.Vector3(x*s,(LEN-y)*s,-thickAt(y)/2*s));
+    const allPts=[...front,...back];
+    const segPts=[];
+    for(let i=0;i<OUT.length;i++){const j=(i+1)%OUT.length; segPts.push(front[i],front[j]); segPts.push(back[i],back[j]);}
+    for(let i=0;i<OUT.length;i++) segPts.push(front[i],back[i]);
+    // pickup rectangle (P90) on front face
+    const pu=[[-3.2,74],[3.2,74],[3.2,81],[-3.2,81]].map(([x,y])=>{
+      const t=thickAt(y)/2*s+0.01*s; return new THREE.Vector3(x*s,(LEN-y)*s,t);});
+    for(let i=0;i<4;i++){segPts.push(pu[i],pu[(i+1)%4]); allPts.push(pu[i]);}
+    // bridge line + control knob dots
+    const bridgeY=88, bt=thickAt(bridgeY)/2*s+0.01*s;
+    const br1=new THREE.Vector3(-3*s,(LEN-bridgeY)*s,bt), br2=new THREE.Vector3(3*s,(LEN-bridgeY)*s,bt);
+    segPts.push(br1,br2); allPts.push(br1,br2);
+    const knobs=[[6,90],[6,94]].map(([x,y])=>{const t=thickAt(y)/2*s+0.01*s; return new THREE.Vector3(x*s,(LEN-y)*s,t);});
+    allPts.push(...knobs);
+    // strings: nut(y=10) to bridge(y=88)
+    const stringXs=[-1.6,-1.0,-0.35,0.35,1.0,1.6];
+    stringXs.forEach(x=>{
+      const t1=thickAt(10)/2*s+0.008*s, t2=thickAt(bridgeY)/2*s+0.008*s;
+      const a=new THREE.Vector3(x*s,(LEN-10)*s,t1), b=new THREE.Vector3(x*s,(LEN-bridgeY)*s,t2);
+      segPts.push(a,b);
+    });
+    // tuner dots at headstock
+    const tuners=[[-4.4,2],[-4.4,4.5],[-4.4,7],[4.4,2],[4.4,4.5],[4.4,7]].map(([x,y])=>new THREE.Vector3(x*s,(LEN-y)*s,0.5*s));
+    allPts.push(...tuners);
+    group.add(new THREE.Points(new THREE.BufferGeometry().setFromPoints(allPts),new THREE.PointsMaterial({color:dotColor,size:0.05})));
+    group.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(segPts),new THREE.LineBasicMaterial({color:lineColor,transparent:true,opacity:.85})));
+    const stringGeo=new THREE.BufferGeometry().setFromPoints(stringXs.flatMap(x=>{
+      const t1=thickAt(10)/2*s+0.008*s, t2=thickAt(bridgeY)/2*s+0.008*s;
+      return [new THREE.Vector3(x*s,(LEN-10)*s,t1), new THREE.Vector3(x*s,(LEN-bridgeY)*s,t2)];}));
+    group.add(new THREE.LineSegments(stringGeo,new THREE.LineBasicMaterial({color:amber,transparent:true,opacity:.7})));
+    group.position.y=-LEN*s*0.5*0.9; cam.position.set(0.3,0,6.2); cam.lookAt(0,-0.3,0);
+    return mountOrbit(canvas,renderer,scene,cam,group,size,-0.05);
+  }
+  function outlinePath(scale,cx,cyTop){
+    let d=`M ${cx+OUT[0][0]*scale} ${cyTop+OUT[0][1]*scale}`;
+    OUT.forEach(([x,y])=>d+=` L ${cx+x*scale} ${cyTop+y*scale}`); d+=' Z'; return d;
+  }
+  function frontView(){
+    const svg=svgEl('svg',{viewBox:'0 0 200 260'}); const scale=1.9, cx=100, cyTop=8;
+    svg.appendChild(svgEl('path',{d:outlinePath(scale,cx,cyTop),class:'wireline'}));
+    OUT.forEach(([x,y])=>svg.appendChild(svgEl('circle',{cx:cx+x*scale,cy:cyTop+y*scale,r:1.4,class:'wiredot'})));
+    dimLineV(svg,178,cyTop,cyTop+LEN*scale,LEN.toFixed(0)+' cm');
+    dimLineH(svg,cyTop+66*scale,cx-BODYW/2*scale,cx+BODYW/2*scale,BODYW.toFixed(0)+' cm');
+    return svg;
+  }
+  function sideView(){
+    const svg=svgEl('svg',{viewBox:'0 0 200 260'}); const scale=1.9, cx=140, cyTop=8;
+    const ys=[0,10,52,LEN]; const pts=ys.map(y=>[cx+thickAt(Math.min(y,LEN-0.1))*scale, cyTop+y*scale]);
+    let d=`M ${cx} ${cyTop}`; pts.forEach(p=>d+=` L ${p[0]} ${p[1]}`); d+=` L ${cx} ${cyTop+LEN*scale} Z`;
+    svg.appendChild(svgEl('path',{d,class:'wireline'}));
+    pts.forEach(p=>svg.appendChild(svgEl('circle',{cx:p[0],cy:p[1],r:1.6,class:'wiredot'})));
+    dimLineH(svg,cyTop-4,cx,cx+1.6*scale,'1.6');
+    dimLineH(svg,cyTop+52*scale+10,cx,cx+2.2*scale,'2.2');
+    dimLineH(svg,cyTop+LEN*scale+10,cx,cx+4.4*scale,'4.4 cm');
+    return svg;
+  }
+  function topView(){
+    const svg=svgEl('svg',{viewBox:'0 0 200 100'}); const scale=6, cx=100,cy=50;
+    const w=BODYW/2*scale, t=4.4/2*scale;
+    svg.appendChild(svgEl('rect',{x:cx-w,y:cy-t,width:w*2,height:t*2,class:'wireline'}));
+    [[cx-w,cy-t],[cx+w,cy-t],[cx+w,cy+t],[cx-w,cy+t]].forEach(([x,y])=>svg.appendChild(svgEl('circle',{cx:x,cy:y,r:1.8,class:'wiredot'})));
+    dimLineH(svg,cy+t+16,cx-w,cx+w,BODYW.toFixed(0)+' cm');
+    dimLineV(svg,cx+w+16,cy+t,cy-t,'4.4 cm');
+    return svg;
+  }
+  function ortho(container){
+    [['FRONT — length × body width',frontView()],['SIDE — thickness by section',sideView()],
+     ['TOP — body width × thickness',topView()]].forEach(([label,svg])=>{
+      const wrap=document.createElement('div'); wrap.className='view';
+      const h=document.createElement('h3'); h.textContent=label;
+      wrap.appendChild(h); wrap.appendChild(svg); container.appendChild(wrap);});
+  }
+  function id(svg){
+    const scale=2.6, cx=190, cyTop=6;
+    svg.appendChild(svgEl('path',{d:outlinePath(scale,cx,cyTop),class:'wireline'}));
+    OUT.forEach(([x,y])=>svg.appendChild(svgEl('circle',{cx:cx+x*scale,cy:cyTop+y*scale,r:1.4,class:'wiredot'})));
+    function callout(px,py,lx,ly,tx,ty,label,anchor){
+      svg.appendChild(svgEl('circle',{cx:px,cy:py,r:2.2,fill:'var(--amber)'}));
+      svg.appendChild(svgEl('line',{x1:px,y1:py,x2:lx,y2:ly,class:'leadline'}));
+      svg.appendChild(svgEl('line',{x1:lx,y1:ly,x2:tx,y2:ty,class:'leadline'}));
+      const t=svgEl('text',{x:tx+(anchor==='end'?-4:4),y:ty+3,class:'leadlabel','text-anchor':anchor||'start'});
+      t.textContent=label; svg.appendChild(t);}
+    callout(cx+6*scale,cyTop+40*scale,60,50,15,50,'pointed cutaway horn','start');
+    callout(cx-2.6*scale,cyTop+52*scale,60,110,15,110,'set neck-to-body join','start');
+    callout(cx+3.3*scale,cyTop+4*scale,340,20,405,20,'3-per-side tuners','end');
+    callout(cx-2*scale,cyTop+77*scale,60,190,15,190,'single P90-style pickup','start');
+    callout(cx,cyTop+88*scale,340,230,405,230,'wraparound bridge/tailpiece','end');
+  }
+  return {label:'Guitar', title:'Object 3 — Electric Guitar',
+    l1sub:'Drag to rotate. Built by extruding the body/neck silhouette to a stepped thickness.',
+    verdict:'Solid-body electric guitar, single-cutaway — Gibson Les Paul Junior style',
+    matchbasis:'MATCH BASIS: single pointed cutaway horn at the neck/body join · slab solid body, no bevels · one P90-style single-coil pickup near the bridge · wraparound combined bridge/tailpiece · open-book 3-per-side headstock',
+    three, ortho, id};
+})();
+
+// shared orbit/auto-rotate mount + animation loop, returns {stop()}
+function mountOrbit(canvas, renderer, scene, cam, group, size, initRotX){
+  let dragging=false,lastX=0,lastY=0,rotY=0.55,rotX=(initRotX!==undefined?initRotX:-0.1),autorotate=true,idleT=0,running=true;
+  function applyRot(){group.rotation.y=rotY; group.rotation.x=rotX;}
+  applyRot();
+  function down(x,y){dragging=true;autorotate=false;lastX=x;lastY=y;}
+  function move(x,y){if(!dragging)return; rotY+=(x-lastX)*0.008; rotX+=(y-lastY)*0.006;
+    rotX=Math.max(-0.9,Math.min(0.9,rotX)); lastX=x;lastY=y; applyRot();}
+  function up(){dragging=false;idleT=0;}
+  const md=e=>down(e.clientX,e.clientY), mm=e=>move(e.clientX,e.clientY), mu=up;
+  const ts=e=>{const t=e.touches[0]; down(t.clientX,t.clientY);}, tm=e=>{const t=e.touches[0]; move(t.clientX,t.clientY);};
+  canvas.addEventListener('mousedown',md); window.addEventListener('mousemove',mm); window.addEventListener('mouseup',mu);
+  canvas.addEventListener('touchstart',ts,{passive:true}); canvas.addEventListener('touchmove',tm,{passive:true}); canvas.addEventListener('touchend',mu);
+  size(); const onResize=()=>size(); window.addEventListener('resize',onResize);
+  function tick(){
+    if(!running) return;
+    if(autorotate){rotY+=0.0035; applyRot();} else {idleT++; if(idleT>90) autorotate=true;}
+    renderer.render(scene,cam); requestAnimationFrame(tick);
+  }
+  tick();
+  return {stop(){running=false; window.removeEventListener('mousemove',mm); window.removeEventListener('mouseup',mu);
+    window.removeEventListener('resize',onResize); renderer.dispose();}};
+}
+
+// ---------------- page switching ----------------
+const PAGES=[BOTTLE,WALLET,GUITAR];
+let currentStage=null;
+function showPage(idx){
+  const page=PAGES[idx];
+  if(currentStage) currentStage.stop();
+  document.getElementById('pagetitle').textContent=page.title;
+  document.getElementById('l1sub').textContent=page.l1sub;
+  document.getElementById('verdict').textContent=page.verdict;
+  document.getElementById('matchbasis').textContent=page.matchbasis;
+  const ortho=document.getElementById('ortho'); ortho.innerHTML='';
+  const idsvg=document.getElementById('idsvg'); idsvg.innerHTML='';
+  const canvas=document.getElementById('stage');
+  const fresh=canvas.cloneNode(); canvas.replaceWith(fresh); fresh.id='stage';
+  currentStage=page.three(fresh);
+  page.ortho(ortho); page.id(idsvg);
+  Array.from(document.querySelectorAll('#pagesnav button')).forEach((b,i)=>b.classList.toggle('active', i===idx));
+}
+const nav=document.getElementById('pagesnav');
+PAGES.forEach((page,i)=>{
+  const b=document.createElement('button'); b.textContent=page.label;
+  b.addEventListener('click',()=>showPage(i)); nav.appendChild(b);
+});
+showPage(0);
+</script>
+</body>
+</html>
